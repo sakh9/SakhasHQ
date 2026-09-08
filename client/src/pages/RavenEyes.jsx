@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { Search, AlertTriangle, Loader2, X } from 'lucide-react';
-import CveCard from '../components/CveCard';
+import CveCard from '../components/raveneyes/CveCard';
 
 const SEVERITIES = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'];
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';

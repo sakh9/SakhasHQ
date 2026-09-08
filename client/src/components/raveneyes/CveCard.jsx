@@ -1,5 +1,5 @@
 import { ExternalLink } from 'lucide-react';
-import { buildCveSummary } from '../utils/cveRiskSummary';
+import { buildCveSummary } from '../../utils/cveRiskSummary';
 
 const SEVERITY_STYLE = {
   CRITICAL: 'bg-red-900/30 text-red-400 border-red-800',
