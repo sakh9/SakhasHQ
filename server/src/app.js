@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const lookupRoute = require('./routes/lookup');
+const ravenEyesRoute = require('./routes/raven-eyes');
 
 // This file builds and exports a fully configured Express app with no side
 // effects - it never calls app.listen(), process.exit(), or registers
@@ -70,6 +71,7 @@ function createApp() {
   app.use('/api', limiter);
 
   app.use('/api/lookup', lookupRoute);
+  app.use('/api/raven-eyes', ravenEyesRoute);
 
   // Health check for Render/UptimeRobot
   app.get('/health', (req, res) => res.status(200).json({ status: 'ok', time: new Date().toISOString() }));
