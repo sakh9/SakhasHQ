@@ -84,8 +84,11 @@ export default function RavenEyes() {
   }
 
   useEffect(() => {
-    loadFeed(null);
-    return () => abortRef.current?.abort();
+    const timer = setTimeout(() => loadFeed(null), 0);
+    return () => {
+      clearTimeout(timer);
+      abortRef.current?.abort();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
