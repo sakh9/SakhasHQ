@@ -16,7 +16,7 @@ The applications share a single React frontend and Node.js/Express backend, whil
 **OSINQUEST + Raven Eyes:**  
 https://sakhas-hq.vercel.app
 
-## Architecture
+## OSINQUEST Architecture
 
 ```mermaid
 flowchart LR
