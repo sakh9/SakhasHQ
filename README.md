@@ -23,7 +23,6 @@ flowchart LR
     U[Browser] --> FE["React + Vite<br/>Vercel"]
     FE -->|HTTPS| BE["Node.js + Express<br/>Railway"]
     BE --> DB[(PostgreSQL)]
-
     BE --> GEO["Geolocation APIs"]
     BE --> WHOIS["WHOIS / RDAP"]
     BE --> DNS["DNS Resolution"]
@@ -74,11 +73,7 @@ Raven Eyes provides a focused interface for discovering and monitoring Common Vu
 ### Features
 
 - Recent CVE feed
-- Severity filtering:
-  - Critical
-  - High
-  - Medium
-  - Low
+- Severity filtering: Critical, High, Medium, and Low
 - Keyword-based CVE search
 - CVSS base score and severity
 - CVSS vector information
