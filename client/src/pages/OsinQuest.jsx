@@ -1,12 +1,12 @@
 import { useState, useRef } from 'react';
 import axios from 'axios';
 import { Search, ShieldAlert, Activity, MapPin, Globe, Server, AlertTriangle, Clock, CheckCircle2, Info, Copy, Download, Check, History, Sparkles, Terminal, Database, Zap} from 'lucide-react';
-import MapView from '../components/MapView';
-import AbuseGauge from '../components/AbuseGauge';
-import ActivityChart from '../components/ActivityChart';
-import DnsRecordChart from '../components/DnsRecordChart';
-import SearchChips from '../components/SearchChips';
-import TotalLookupsCounter from '../components/TotalLookupsCounter';
+import MapView from '../components/osint/MapView';
+import AbuseGauge from '../components/osint/AbuseGauge';
+import ActivityChart from '../components/osint/ActivityChart';
+import DnsRecordChart from '../components/osint/DnsRecordChart';
+import SearchChips from '../components/osint/SearchChips';
+import TotalLookupsCounter from '../components/osint/TotalLookupsCounter';
 import { useRecentSearches } from '../hooks/useRecentSearches';
 
 const EXAMPLE_QUERIES = ['8.8.8.8', '1.1.1.1', 'github.com', 'cloudflare.com'];

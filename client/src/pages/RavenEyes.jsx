@@ -96,7 +96,7 @@ export default function RavenEyes() {
     <div className="max-w-4xl mx-auto px-6 py-10">
       <header className="mb-8">
         <h1 className="text-3xl font-bold text-emerald-400">Raven Eyes</h1>
-        <p className="text-slate-400">CVE tracker \u2014 recent vulnerabilities and keyword search</p>
+        <p className="text-slate-400">CVE tracker 2014 recent vulnerabilities and keyword search</p>
       </header>
 
       <form onSubmit={handleSearch} className="flex gap-2 mb-4">
