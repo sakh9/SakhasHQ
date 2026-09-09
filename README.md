@@ -14,7 +14,7 @@ The applications share a single React frontend and Node.js/Express backend, whil
 ## Live Demo
 
 **OSINQUEST + Raven Eyes:**  
-https://osinquest.vercel.app
+https://sakhas-hq.vercel.app
 
 ## Architecture
 
