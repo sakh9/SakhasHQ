@@ -63,10 +63,24 @@ function normalizeCve(vuln) {
   };
 }
 
-async function searchCves(keyword, { resultsPerPage = 20 } = {}) {
+// NVD's keywordSearch has no relevance ranking, and API v2.0 removed
+// sorting entirely (the older v1/community wrappers had a `sortby` param
+// that no longer exists). Results appear in roughly chronological/ID
+// order - for a broad, long-lived keyword like "openssl" (CVEs going
+// back to 1999), that means the OLDEST matches come first by default,
+// which is backwards for a tool about "should I care about this now."
+// Since NVD won't sort for us, fetch a larger pool than we display, then
+// sort by publish date ourselves so recent, actionable CVEs surface
+// first - totalResults still reflects NVD's true match count, only the
+// displayed subset changes.
+function sortByPublishedDesc(cves) {
+  return [...cves].sort((a, b) => new Date(b.published) - new Date(a.published));
+}
+
+async function searchCves(keyword, { resultsPerPage = 20, fetchPoolSize = 100 } = {}) {
   const params = new URLSearchParams({
     keywordSearch: keyword,
-    resultsPerPage: String(resultsPerPage),
+    resultsPerPage: String(fetchPoolSize),
   });
 
   const res = await fetchWithTimeout(`${NVD_BASE_URL}?${params.toString()}`, { headers: nvdHeaders() });
@@ -76,9 +90,11 @@ async function searchCves(keyword, { resultsPerPage = 20 } = {}) {
   }
 
   const data = await res.json();
+  const normalized = (data.vulnerabilities || []).map(normalizeCve);
+
   return {
     totalResults: data.totalResults ?? 0,
-    results: (data.vulnerabilities || []).map(normalizeCve),
+    results: sortByPublishedDesc(normalized).slice(0, resultsPerPage),
   };
 }
 
@@ -104,8 +120,11 @@ async function getRecentCves({ severity = null, days = 30, resultsPerPage = 20 }
   const data = await res.json();
   return {
     totalResults: data.totalResults ?? 0,
-    results: (data.vulnerabilities || []).map(normalizeCve),
+    // Already date-bounded to the last N days, but still worth sorting -
+    // "recent" should mean "newest of the window shown first," not
+    // "oldest-of-the-30-days first," for the same reason as searchCves.
+    results: sortByPublishedDesc((data.vulnerabilities || []).map(normalizeCve)),
   };
 }
 
-module.exports = { searchCves, getRecentCves, normalizeCve, toNvdDate };
+module.exports = { searchCves, getRecentCves, normalizeCve, toNvdDate, sortByPublishedDesc };

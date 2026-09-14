@@ -1,4 +1,4 @@
-const { searchCves, getRecentCves, normalizeCve, toNvdDate } = require('../src/services/nvd');
+const { searchCves, getRecentCves, normalizeCve, toNvdDate, sortByPublishedDesc } = require('../src/services/nvd');
 
 beforeEach(() => {
   global.fetch = jest.fn();
@@ -90,6 +90,43 @@ describe('searchCves', () => {
     const calledUrl = global.fetch.mock.calls[0][0];
     expect(calledUrl).toContain('keywordSearch=apache+struts');
   });
+
+  // Regression test: NVD's real-world behavior for broad, long-lived
+  // keywords (like "openssl", with CVEs since 1999) returned the OLDEST
+  // matches first, since NVD API v2.0 has no sort parameter at all. This
+  // confirms searchCves corrects that itself rather than passing through
+  // whatever order NVD happens to return.
+  test('sorts results by published date descending, regardless of NVD\u2019s raw order', async () => {
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        totalResults: 3,
+        vulnerabilities: [
+          { cve: { id: 'CVE-1999-0001', published: '1999-03-01T00:00:00.000', descriptions: [], metrics: {}, references: [] } },
+          { cve: { id: 'CVE-2024-5000', published: '2024-06-15T00:00:00.000', descriptions: [], metrics: {}, references: [] } },
+          { cve: { id: 'CVE-2010-2000', published: '2010-01-01T00:00:00.000', descriptions: [], metrics: {}, references: [] } },
+        ],
+      }),
+    });
+    const result = await searchCves('openssl');
+    expect(result.results.map((r) => r.id)).toEqual(['CVE-2024-5000', 'CVE-2010-2000', 'CVE-1999-0001']);
+  });
+
+  test('fetches a larger pool than it returns, so sorting has something to work with', async () => {
+    global.fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ totalResults: 0, vulnerabilities: [] }) });
+    await searchCves('openssl');
+    expect(global.fetch.mock.calls[0][0]).toContain('resultsPerPage=100');
+  });
+
+  test('totalResults still reflects NVD\u2019s true match count, not the truncated display count', async () => {
+    const manyVulns = Array.from({ length: 50 }, (_, i) => ({
+      cve: { id: `CVE-2024-${i}`, published: `2024-01-${(i % 28) + 1}T00:00:00.000`, descriptions: [], metrics: {}, references: [] },
+    }));
+    global.fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ totalResults: 4213, vulnerabilities: manyVulns }) });
+    const result = await searchCves('openssl');
+    expect(result.totalResults).toBe(4213);
+    expect(result.results).toHaveLength(20); // still capped at the display count
+  });
 });
 
 describe('getRecentCves', () => {
@@ -108,5 +145,32 @@ describe('getRecentCves', () => {
   test('throws on a non-ok response', async () => {
     global.fetch.mockResolvedValueOnce({ ok: false, status: 429 });
     await expect(getRecentCves({})).rejects.toThrow(/status 429/);
+  });
+
+  test('sorts feed results by published date descending too, not just search', async () => {
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        totalResults: 2,
+        vulnerabilities: [
+          { cve: { id: 'CVE-2024-0001', published: '2024-06-01T00:00:00.000', descriptions: [], metrics: {}, references: [] } },
+          { cve: { id: 'CVE-2024-0002', published: '2024-06-20T00:00:00.000', descriptions: [], metrics: {}, references: [] } },
+        ],
+      }),
+    });
+    const result = await getRecentCves({});
+    expect(result.results.map((r) => r.id)).toEqual(['CVE-2024-0002', 'CVE-2024-0001']);
+  });
+});
+
+describe('sortByPublishedDesc', () => {
+  test('does not mutate the original array', () => {
+    const original = [
+      { id: 'a', published: '2020-01-01T00:00:00.000' },
+      { id: 'b', published: '2024-01-01T00:00:00.000' },
+    ];
+    const copy = [...original];
+    sortByPublishedDesc(original);
+    expect(original).toEqual(copy); // original order untouched
   });
 });
