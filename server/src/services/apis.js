@@ -93,11 +93,8 @@ const getShodan = async (ip) => {
   return res.json();
 };
 
-// RDAP WHOIS - now handles both domains and IPs, and no longer swallows
-// real failures. Previously this only ever queried /domain/{value}, so
-// every IP lookup silently got back {registrar:'Unknown'} instead of
-// actual RDAP network/allocation data. Errors are now thrown instead of
-// caught-and-faked, so the router's error handling (unwrap in lookup.js)
+// RDAP WHOIS - handles both domains and IPs. Errors are thrown (not
+// caught-and-faked) so the router's error handling (unwrap in lookup.js)
 // can report the real reason to the frontend.
 const getWhois = async (query) => {
   const url = isIp(query) ? `https://rdap.org/ip/${query}` : `https://rdap.org/domain/${query}`;
@@ -106,6 +103,12 @@ const getWhois = async (query) => {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) OSINQUEST-OSINT-Engine/1.0',
     'Accept': 'application/rdap+json, application/json',
   };
+
+  // Tracks WHY the primary lookup failed, so the final error below can
+  // report the real reason instead of a fixed, misleading message -
+  // previously this always said "forbidden (403)" even for a 500, a
+  // timeout, or anything else that wasn't actually a 403.
+  let primaryFailureReason = 'unknown error';
 
   try {
     const res = await fetchWithTimeout(url, {
@@ -130,13 +133,17 @@ const getWhois = async (query) => {
         nameservers: (data.nameservers || []).map((ns) => ns.ldhName).filter(Boolean),
       };
     }
-    
+
+    primaryFailureReason = `status ${res.status}`;
     console.warn(`[RDAP WHOIS] Primary RDAP returned status ${res.status} for ${query}. Attempting fallback...`);
   } catch (err) {
+    primaryFailureReason = err.message;
     console.warn(`[RDAP WHOIS] Primary RDAP failed for ${query}: ${err.message}. Trying fallback...`);
   }
 
-  // Fallback Attempt: ipwho.is for IP queries if RDAP.org returned 403/Forbidden
+  // Fallback Attempt: ipwho.is for IP queries only - RDAP.org has no
+  // domain equivalent to fall back to, so a failed domain lookup skips
+  // straight to the error below with no second request attempted.
   if (isIp(query)) {
     try {
       const fallbackRes = await fetchWithTimeout(`https://ipwho.is/${query}`);
@@ -160,7 +167,7 @@ const getWhois = async (query) => {
     }
   }
 
-  throw new Error('RDAP WHOIS lookup failed or access was forbidden (403)');
+  throw new Error(`RDAP WHOIS lookup failed: ${primaryFailureReason}`);
 };
 
 // DNS Records - added AAAA/CNAME for parity with what a real DNS toolkit
