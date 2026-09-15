@@ -27,6 +27,7 @@
     "morgan": "^1.12.0",
     "node-fetch": "^2.7.0",
     "pg": "^8.23.0",
+    "rss-parser": "^3.13.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
